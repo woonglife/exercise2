@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <pthread.h>
 #include <sys/queue.h>
 
 #define devide_sentence 100
@@ -20,21 +20,21 @@ struct entry {
 
 char buf[][4096] = {};
 
-struct entry* np = head.lh_first;
+struct entry* np;;
 struct entry* final_np = NULL;
 
-pthread_mutex_t mutex = PTRHEAD_MUTEX_INITIALIZATION;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-void* fucntion(void* arg) {
+void* function(void* arg) {
 	long long i = *(long long*)arg;
 	i *= devide_sentence;
 	int count = 0;
 	while (count++ < devide_sentence) {
 
 		int line_length = strlen(buf[i + count]);
-
-		for (int it = 0; it < line_length; ++it) {
+		int it;
+		for (it = 0; it < line_length; ++it) {
 			if (!isalnum(buf[i + count][it])) {
 				buf[i + count][it] = ' ';
 			}
@@ -52,7 +52,7 @@ void* fucntion(void* arg) {
 		}
 
 		do {
-			pthread_mutex_lock(&mutex)
+			pthread_mutex_lock(&mutex);
 			if (num_entries == 0) {
 				struct entry* e = malloc(sizeof(struct entry));
 
@@ -94,8 +94,9 @@ void* fucntion(void* arg) {
 
 			// Reduce: actual word-counting
 
-
-			int last_cmp = strcmp(tok, np->name);
+			np = head.lh_first;
+			int last_cmp;
+			last_cmp = strcmp(tok, np->name);
 
 			if (last_cmp < 0) {
 				struct entry* e = malloc(sizeof(struct entry));
@@ -150,7 +151,7 @@ void* fucntion(void* arg) {
 				num_entries++;
 			}
 			
-			pthread_mutex_unlock(&mutex)
+			pthread_mutex_unlock(&mutex);
 		} while (tok = strtok(NULL, WHITE_SPACE));//그 다음 토큰을 확인한다.
 	}
 	pthread_exit(NULL);
@@ -164,7 +165,7 @@ int main(int argc, char** argv)
 
 	FILE* fp = fopen(argv[1], "r");
 	
-	pthread_t tid[];
+	pthread_t tid[100000000];
 	LIST_INIT(&head);
 	long long i = 0;
 	long long num_thread = 0;;
@@ -176,22 +177,26 @@ int main(int argc, char** argv)
 		i++;
 	}
 
-	for (int j = 0; j < i; j++) {
+
+
+	int j = 0;
+	for (j = 0; j < i; j++) {
 		pthread_join(tid[j], NULL);
 	}
 
 
 	// Print the counting result very very slow way.
 	int max_frequency = 0;
-
-	for (struct entry* np = head.lh_first; np != NULL; np = np->entries.le_next) {
+	struct entry* np;
+	for (np = head.lh_first; np != NULL; np = np->entries.le_next) {
 		if (max_frequency < np->frequency) {
 			max_frequency = np->frequency;
 		}
 	}
-
-	for (int it = max_frequency; it > 0; --it) {
-		for (struct entry* np = head.lh_first; np != NULL; np = np->entries.le_next) {
+	int it;
+	for (it = max_frequency; it > 0; --it) {
+		struct entry* np;
+		for (np = head.lh_first; np != NULL; np = np->entries.le_next) {
 			if (np->frequency == it) {
 				printf("%s %d\n", np->name, np->frequency);
 			}
