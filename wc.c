@@ -52,7 +52,7 @@ void* function(void* arg) {
 		}
 
 		do {
-			pthread_mutex_lock(&mutex);
+			//pthread_mutex_lock(&mutex);
 			if (num_entries == 0) {
 				struct entry* e = malloc(sizeof(struct entry));
 
@@ -150,8 +150,8 @@ void* function(void* arg) {
 				LIST_INSERT_AFTER(final_np, e, entries);
 				num_entries++;
 			}
-			
-			pthread_mutex_unlock(&mutex);
+
+		//	pthread_mutex_unlock(&mutex);
 		} while (tok = strtok(NULL, WHITE_SPACE));//그 다음 토큰을 확인한다.
 	}
 	pthread_exit(NULL);
@@ -164,14 +164,15 @@ int main(int argc, char** argv)
 	}
 
 	FILE* fp = fopen(argv[1], "r");
-	
-	pthread_t tid[100000000];
+
+	//pthread_t tid[100000000];
 	LIST_INIT(&head);
 	long long i = 0;
 	long long num_thread = 0;;
 	while (fgets(buf[i], 4096, fp)) {
 		if (i % devide_sentence == 0) {
-			pthread_create(&tid[i], NULL, function, &num_thread);
+			//pthread_create(&tid[i], NULL, function, &num_thread);
+			function(&num_thread);
 			num_thread++;
 		}
 		i++;
