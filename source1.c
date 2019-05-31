@@ -6,8 +6,10 @@
 #include <sys/queue.h>
 
 #define devide_sentence 100
-
+#define num_thread 4
 static LIST_HEAD(listhead, entry) head;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct listhead* headp = NULL;
 int num_entries = 0;
@@ -18,35 +20,35 @@ struct entry {
 	LIST_ENTRY(entry) entries;
 };
 
-char buf[4096];
+char buf[num_thread][4096];
 
 struct entry* np;;
 struct entry* final_np = NULL;
 
 
 void* function(void* arg) {
-	long long i = *(long long*)arg;
-	int line_length = strlen(buf);
+	int count = *(int*)arg;
+	int line_length = strlen(buf[count]);
 	int it;
 	for (it = 0; it < line_length; ++it) {
-		if (!isalnum(buf[it])) {
-			buf[it] = ' ';
+		if (!isalnum(buf[count][it])) {
+			buf[count][it] = ' ';
 		}
 		else {
-			buf[it] = tolower(buf[it]);
+			buf[count][it] = tolower(buf[count][it]);
 		}
 	}
 
 	// Tokenization
 	const char* WHITE_SPACE = " \t\n";
-	char* tok = strtok(buf, WHITE_SPACE);
+	char* tok = strtok(buf[count], WHITE_SPACE);
 
 	if (tok == NULL || strcmp(tok, "") == 0) { // 토큰한게 끝나면 다음문장을 fgets하러간다.
 		return NULL;
 	}
 
 	do {
-		//pthread_mutex_lock(&mutex);
+		pthread_mutex_lock(&mutex);
 		if (num_entries == 0) {
 			struct entry* e = malloc(sizeof(struct entry));
 
@@ -146,7 +148,7 @@ void* function(void* arg) {
 			num_entries++;
 		}
 
-		//	pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutex);
 	} while (tok = strtok(NULL, WHITE_SPACE));//그 다음 토큰을 확인한다.
 
 }
@@ -161,13 +163,22 @@ int main(int argc, char** argv)
 
 	LIST_INIT(&head);
 	long long i = 0;
-	while (fgets(buf, 4096, fp)) {
-		pthread_t tid;
-		pthread_create(&tid, NULL, function, &i);
-		//function(&num_thread);
-		// num_thread++;
-		pthread_join(tid,NULL);
-		i++;
+
+
+	int count = 0;
+
+	while (fgets(buf[count], 4096, fp)) {
+
+		pthread_t tid[num_thread];
+
+		for (int l = 0; l < num_thread; l++) {
+			pthread_create(&tid[l], NULL, function, &count++);
+			i++;
+		}
+		for (int l = 0; l < num_thread; l++) {
+			pthread_join(tid[l], NULL);
+		}
+		count = 0;
 	}
 
 
