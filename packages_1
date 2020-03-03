@@ -5,9 +5,14 @@ FROM ubuntu:19.04
 #COPY src $SRC_DIR
 #WORKDIR $SRC_DIR
 
+RUN apt-get update
+RUN apt-get install update
+
 RUN apt-get update && apt-get install -y apt-transport-https
 RUN apt-get install -y git
 RUN apt-get install -y python3-pip
+RUN pip install --upgrade pip
+
 RUN git clone https://github.com/martinroyer/atol
 WORKDIR atol
 RUN pip install .
@@ -15,8 +20,6 @@ RUN pip install .
 RUN git clone https://github.com/MathieuCarriere/perslay
 WORKDIR perslay
 RUN pip install .
-
-RUN pip install --upgrade pip
 
 RUN pip install python-igraph
 RUN pip install pydot
